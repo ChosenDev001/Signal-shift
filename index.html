@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f1e8">
+<meta name="description" content="Signal Shift is a small grid puzzle. Collect every data spark and reach the receiver.">
+<title>Signal Shift — a tiny grid puzzle</title>
+<style>
+  :root { color-scheme: light; --paper:#f4f1e8; --ink:#20231f; --muted:#73766e; --line:#d8d4c8; --green:#2f6b4f; --lime:#c9e7a6; --tile:#fffdf7; --blocked:#d7d3c8; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--paper); color:var(--ink); font-family: ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .wrap { width:min(100% - 32px, 900px); margin:0 auto; padding:28px 0 36px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--line); padding-bottom:18px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.04em; font-size:1.15rem; }
+  .mark { display:grid; place-items:center; width:34px; height:34px; border:2px solid var(--green); border-radius:10px; color:var(--green); font-size:19px; }
+  .tag { font-size:.75rem; color:var(--muted); border:1px solid var(--line); padding:6px 10px; border-radius:999px; white-space:nowrap; }
+  main { display:grid; grid-template-columns:minmax(0,1fr) 245px; gap:34px; align-items:start; padding-top:34px; }
+  h1 { font-size:clamp(2.2rem,6vw,4rem); line-height:.98; letter-spacing:-.07em; margin:0; max-width:540px; }
+  .intro { color:var(--muted); line-height:1.6; max-width:480px; margin:15px 0 24px; }
+  .game-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  .level-label { font-size:.78rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--green); }
+  .stats { display:flex; gap:8px; }
+  .stat { background:#e9e5da; padding:7px 10px; border-radius:9px; font-size:.8rem; color:#55594f; }
+  .stat strong { color:var(--ink); }
+  .board { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; padding:10px; background:#e7e2d6; border:1px solid var(--line); border-radius:16px; width:100%; max-width:520px; aspect-ratio:1; touch-action:manipulation; }
+  .cell { display:grid; place-items:center; min-width:0; border-radius:8px; background:var(--tile); font-size:clamp(1rem,3.4vw,1.7rem); user-select:none; }
+  .cell.wall { background:var(--blocked); }
+  .cell.spark { color:#b07824; }
+  .cell.player { background:var(--green); color:white; box-shadow:inset 0 0 0 2px rgba(255,255,255,.25); }
+  .cell.goal { background:var(--lime); color:#234b35; }
+  .cell.player.goal { background:var(--green); color:var(--lime); }
+  .controls { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; max-width:520px; }
+  .hint { color:var(--muted); font-size:.78rem; line-height:1.4; }
+  button { font:inherit; cursor:pointer; border:1px solid var(--line); border-radius:10px; padding:10px 13px; background:var(--tile); color:var(--ink); font-weight:700; }
+  button:hover { border-color:var(--green); }
+  button:focus-visible { outline:3px solid #83ad8c; outline-offset:3px; }
+  .restart { white-space:nowrap; }
+  aside { border-left:1px solid var(--line); padding-left:24px; }
+  aside h2 { font-size:1rem; margin:0 0 12px; letter-spacing:-.02em; }
+  .how { padding:0; margin:0; list-style:none; }
+  .how li { display:flex; gap:11px; margin:0 0 15px; color:var(--muted); font-size:.88rem; line-height:1.45; }
+  .num { display:grid; place-items:center; flex:0 0 25px; height:25px; background:#e4e0d4; color:var(--green); font-weight:800; border-radius:8px; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; border-top:1px solid var(--line); margin-top:22px; padding-top:17px; color:var(--muted); font-size:.78rem; }
+  .legend span { display:flex; align-items:center; gap:5px; }
+  .dot { display:inline-grid; place-items:center; width:23px; height:23px; border-radius:6px; background:var(--tile); color:var(--green); font-size:.85rem; }
+  .message { min-height:25px; margin:12px 2px 0; font-size:.88rem; font-weight:700; color:var(--green); }
+  .pad { display:none; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(2,40px); gap:5px; justify-content:center; margin:16px auto 0; }
+  .pad button { padding:0; font-size:1.2rem; }
+  .pad .up { grid-column:2; }
+  .pad .left { grid-column:1; grid-row:2; }
+  .pad .down { grid-column:2; grid-row:2; }
+  .pad .right { grid-column:3; grid-row:2; }
+  footer { border-top:1px solid var(--line); margin-top:36px; padding-top:15px; color:var(--muted); font-size:.75rem; display:flex; justify-content:space-between; gap:12px; }
+  @media(max-width:700px) { .wrap{width:min(100% - 24px,520px);padding-top:18px} main{grid-template-columns:1fr;gap:25px;padding-top:26px} aside{border-left:0;border-top:1px solid var(--line);padding:20px 0 0} .board{gap:5px;padding:7px;border-radius:12px}.cell{border-radius:6px}.pad{display:grid}.intro{margin-bottom:20px}.game-top{align-items:flex-start}.stat{padding:6px 8px} footer{margin-top:26px} }
+  @media(prefers-reduced-motion:no-preference) { .cell { transition:background-color .12s ease, transform .12s ease; } .cell.player { animation:pop .12s ease-out; } @keyframes pop { from{transform:scale(.88)} to{transform:scale(1)} } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="brand"><span class="mark" aria-hidden="true">↗</span> signal shift</div><span class="tag">A tiny grid puzzle</span></header>
+  <main>
+    <section aria-labelledby="title">
+      <h1 id="title">Find the<br>right signal.</h1>
+      <p class="intro">Move through the grid, collect every data spark, then make it to the receiver. Walls block your path. Think a move or two ahead.</p>
+      <div class="game-top"><span class="level-label" id="levelLabel">Level 01 / 08</span><div class="stats"><span class="stat">Moves <strong id="moves">0</strong></span><span class="stat">Sparks <strong id="sparkCount">0/0</strong></span></div></div>
+      <div id="board" class="board" role="grid" aria-label="Puzzle board"></div>
+      <div class="message" id="message" role="status" aria-live="polite">Collect all sparks to unlock the receiver.</div>
+      <div class="controls"><span class="hint">Use arrow keys or WASD to move.</span><button class="restart" id="restart">↻ Restart level</button></div>
+      <div class="pad" aria-label="Touch controls"><button class="up" data-move="up" aria-label="Move up">↑</button><button class="left" data-move="left" aria-label="Move left">←</button><button class="down" data-move="down" aria-label="Move down">↓</button><button class="right" data-move="right" aria-label="Move right">→</button></div>
+      <div class="legend" aria-label="Tile key"><span><i class="dot">●</i> You</span><span><i class="dot">✦</i> Data spark</span><span><i class="dot">↗</i> Receiver</span><span><i class="dot" style="background:var(--blocked)">■</i> Wall</span></div>
+    </section>
+    <aside><h2>How to play</h2><ol class="how"><li><span class="num">1</span><span>Move the green signal with your keyboard or the arrow buttons.</span></li><li><span class="num">2</span><span>Collect every <strong>✦</strong> spark in the grid.</span></li><li><span class="num">3</span><span>Reach the receiver <strong>↗</strong> after collecting them all.</span></li></ol><h2 style="margin-top:24px">Small tip</h2><p style="color:var(--muted);font-size:.88rem;line-height:1.55;margin:0">You can restart a level whenever you want. Finishing a level takes you straight to the next one.</p></aside>
+  </main>
+  <footer><span>Signal Shift · made for curious minds</span><span>Works offline · no installs</span></footer>
+</div>
+<script>
+(() => {
+  'use strict';
+  const SIZE = 7;
+  // Each level lists wall and spark coordinates; all coordinates are [row, column].
+  const levels = [
+    {start:[0,0], goal:[6,6], walls:[[1,1],[1,2],[2,4],[3,1],[4,3],[5,3]], sparks:[[0,4],[2,2],[4,5]]},
+    {start:[6,0], goal:[0,6], walls:[[5,1],[4,1],[3,1],[2,3],[3,4],[4,5],[1,5]], sparks:[[6,3],[3,2],[1,4]]},
+    {start:[0,3], goal:[6,3], walls:[[1,1],[1,5],[2,1],[2,5],[4,1],[4,5],[5,2],[5,4]], sparks:[[2,3],[3,0],[3,6],[4,3]]},
+    {start:[3,0], goal:[3,6], walls:[[1,1],[2,2],[4,2],[5,1],[1,4],[2,4],[4,4],[5,5]], sparks:[[0,3],[3,2],[3,4],[6,3]]},
+    {start:[0,0], goal:[6,0], walls:[[1,0],[1,2],[2,2],[3,2],[4,2],[5,2],[5,4],[4,4],[3,4],[2,5]], sparks:[[0,3],[2,4],[4,6],[6,3]]},
+    {start:[6,6], goal:[0,0], walls:[[5,5],[4,5],[3,5],[2,5],[1,3],[2,3],[4,2],[5,2]], sparks:[[6,3],[3,4],[1,1],[3,0]]},
+    {start:[3,3], goal:[0,6], walls:[[2,2],[2,4],[4,2],[4,4],[1,3],[5,3],[3,1]], sparks:[[0,0],[0,3],[6,3],[6,6],[3,6]]},
+    {start:[6,0], goal:[0,6], walls:[[5,1],[4,1],[3,1],[2,1],[1,2],[1,3],[1,4],[2,5],[3,5],[4,5],[5,4]], sparks:[[6,3],[3,3],[0,3],[3,6],[0,0]]}
+  ];
+  const board = document.getElementById('board');
+  const movesEl = document.getElementById('moves');
+  const sparksEl = document.getElementById('sparkCount');
+  const levelEl = document.getElementById('levelLabel');
+  const messageEl = document.getElementById('message');
+  const restartBtn = document.getElementById('restart');
+  let levelIndex = 0, player = [0,0], collected = new Set(), moves = 0, finished = false;
+  const key = ([r,c]) => `${r},${c}`;
+  const same = (a,b) => a[0] === b[0] && a[1] === b[1];
+  function loadLevel(index) {
+    levelIndex = index; const level = levels[levelIndex];
+    player = [...level.start]; collected = new Set(); moves = 0; finished = false;
+    messageEl.textContent = 'Collect all sparks to unlock the receiver.';
+    render();
+  }
+  function render() {
+    const level = levels[levelIndex];
+    board.replaceChildren();
+    const walls = new Set(level.walls.map(key));
+    const sparks = new Set(level.sparks.map(key));
+    for (let r=0; r<SIZE; r++) for (let c=0; c<SIZE; c++) {
+      const pos = [r,c], k = key(pos), cell = document.createElement('div');
+      cell.className = 'cell'; cell.setAttribute('role','gridcell');
+      if (walls.has(k)) { cell.classList.add('wall'); cell.textContent = '■'; cell.setAttribute('aria-label','Wall'); }
+      else if (same(pos, player)) { cell.classList.add('player'); cell.textContent = same(pos,level.goal) ? '↗' : '●'; cell.setAttribute('aria-label','Your signal'); }
+      else if (same(pos,level.goal)) { cell.classList.add('goal'); cell.textContent = '↗'; cell.setAttribute('aria-label',collected.size === level.sparks.length ? 'Receiver unlocked' : 'Receiver locked'); }
+      else if (sparks.has(k) && !collected.has(k)) { cell.classList.add('spark'); cell.textContent = '✦'; cell.setAttribute('aria-label','Data spark'); }
+      else { cell.setAttribute('aria-label','Empty tile'); }
+      board.appendChild(cell);
+    }
+    movesEl.textContent = String(moves);
+    sparksEl.textContent = `${collected.size}/${level.sparks.length}`;
+    levelEl.textContent = `Level ${String(levelIndex+1).padStart(2,'0')} / ${String(levels.length).padStart(2,'0')}`;
+  }
+  function move(direction) {
+    if (finished) return;
+    const delta = {up:[-1,0],down:[1,0],left:[0,-1],right:[0,1]}[direction];
+    if (!delta) return;
+    const next = [player[0]+delta[0],player[1]+delta[1]];
+    const level = levels[levelIndex];
+    if (next[0]<0 || next[0]>=SIZE || next[1]<0 || next[1]>=SIZE || level.walls.some(p=>same(p,next))) return;
+    player = next; moves++;
+    const k = key(player);
+    if (level.sparks.some(p=>same(p,player))) collected.add(k);
+    if (same(player,level.goal)) {
+      if (collected.size === level.sparks.length) {
+        if (levelIndex === levels.length-1) { finished = true; messageEl.textContent = `All 8 levels complete — nice work! Total moves this level: ${moves}.`; }
+        else { messageEl.textContent = 'Signal received! Loading next level…'; render(); window.setTimeout(()=>loadLevel(levelIndex+1),550); return; }
+      } else { messageEl.textContent = `Receiver locked — ${level.sparks.length-collected.size} spark${level.sparks.length-collected.size===1?'':'s'} left.`; }
+    } else { messageEl.textContent = collected.size === level.sparks.length ? 'All sparks collected. Find the receiver!' : 'Keep going — collect every spark.'; }
+    render();
+  }
+  document.addEventListener('keydown', event => {
+    const map = {ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'};
+    const direction = map[event.key];
+    if (direction) { event.preventDefault(); move(direction); }
+    if (event.key === 'r' || event.key === 'R') loadLevel(levelIndex);
+  });
+  document.querySelectorAll('[data-move]').forEach(button => button.addEventListener('click',()=>move(button.dataset.move)));
+  restartBtn.addEventListener('click',()=>loadLevel(levelIndex));
+  loadLevel(0);
+})();
+</script>
+</body>
+</html>
