@@ -1,6 +1,6 @@
 # Signal Shift
 
-A small, mobile-friendly grid puzzle made with plain HTML, CSS, and JavaScript. It has eight levels, keyboard and touch controls, a move counter, collected-spark tracking, and a restart button.
+A small, mobile-friendly grid puzzle made with plain HTML, CSS, and JavaScript. It has eight levels, keyboard and touch controls, a move counter, collected-chip tracking, and a restart button.
 
 ## Run it
 
